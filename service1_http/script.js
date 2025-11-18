@@ -30,6 +30,6 @@ const params = {
 };
 
 export default function () {
-  const res = http.get('http://34.146.83.214/', params);
+  const res = http.get('http://<IP address>', params);
   check(res, { 'status is 200': (r) => r.status === 200 });
 }
