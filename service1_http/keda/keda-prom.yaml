@@ -1,0 +1,49 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: service1-keda-rps
+  namespace: service1-lab
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: service1
+
+  minReplicaCount: 1
+  maxReplicaCount: 10
+
+  pollingInterval: 5
+  cooldownPeriod: 5
+
+  triggers:
+    # CPU トリガー（必要ならそのまま残す）
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "60"
+
+    # Prometheus トリガー（RPSベース）
+    - type: prometheus
+      metadata:
+        serverAddress: "http://keda-prometheus-server.monitoring.svc.cluster.local"
+        metricName: "service1_http_rps"
+        query: |
+          sum(rate(service1_http_requests_total[30s]))
+        threshold: "100"   # 1 Pod あたり 100 RPS をターゲット
+
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          # 一度に最大 +9 Pod まで増やす（1→10を一気に許可）
+          policies:
+            - type: Pods
+              value: 9
+              periodSeconds: 5
+          stabilizationWindowSeconds: 0
+        scaleDown:
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 5
+          stabilizationWindowSeconds: 15

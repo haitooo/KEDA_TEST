@@ -1,0 +1,32 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: service1-hpa
+  namespace: service1-lab
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: service1         # ← Deployment 名
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60   # CPU 使用率60%を目標
+  behavior:
+    scaleUp:
+      policies:
+        - type: Pods
+          value: 9               # 一度に最大2倍まで
+          periodSeconds: 5
+      stabilizationWindowSeconds: 0
+    scaleDown:
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 5
+      stabilizationWindowSeconds: 15 # 直近15秒を見て急な縮小を抑制

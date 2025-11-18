@@ -1,0 +1,34 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: service1-keda-cpu
+  namespace: service1-lab
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: service1
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 5
+  cooldownPeriod: 5        # 今は「0に落とすとき」だけに効く（minReplicaCount=1なので実質使われない）
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "60"
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          policies:
+            - type: Pods
+              value: 9
+              periodSeconds: 5
+          stabilizationWindowSeconds: 0
+        scaleDown:
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 5
+          stabilizationWindowSeconds: 15
