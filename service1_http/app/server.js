@@ -46,7 +46,7 @@ app.get("/", (_req, res) => {
   res.set("Content-Type", "text/html; charset=utf-8");
   res.send(`
     <h1>service1</h1>
-    <p>サンプルWebページです。</p>
+    <p>これは最小のサンプルWebページです。</p>
   `);
 });
 
