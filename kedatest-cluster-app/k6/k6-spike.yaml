@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-run
+  namespace: k6
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: grafana/k6:0.49.0
+          # 実行するJSは env で切り替え
+          command: ["/bin/sh", "-lc"]
+          args:
+            - k6 run "/script/${SCRIPT_FILE}"
+          env:
+            - name: TARGET_BASE_URL
+              value: "http://load-target.load-test.svc.cluster.local"
+            - name: SCRIPT_FILE
+              value: "test1.js"   # ← smoke.js / slow_ramp.js に変えるだけ
+          volumeMounts:
+            - name: scripts
+              mountPath: /script
+          resources:
+            requests:
+              cpu: "1500m"
+              memory: "1Gi"
+            limits:
+              cpu: "6000m"
+              memory: "6Gi"
+      volumes:
+        - name: scripts
+          configMap:
+            name: k6-scripts

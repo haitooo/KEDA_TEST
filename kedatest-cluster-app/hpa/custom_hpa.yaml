@@ -1,0 +1,27 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: load-target-hpa-rps-gcp
+  namespace: load-test
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: load-target
+  minReplicas: 15
+  maxReplicas: 100
+  metrics:
+    - type: External
+      external:
+        metric:
+          # ここは「external.metrics.k8s.io に出てくる名前」に合わせて要調整
+          # 例: custom.googleapis.com|testapi/request_count など（アダプタ実装で表記が変わります）
+          name: custom.googleapis.com|testapi/request_count
+          selector:
+            matchLabels:
+              endpoint: work
+        target:
+          # HPAが「外部メトリクスの合計 / Pod数」で平均化してくれる想定
+          # 目標: 70 RPS/pod * 10 sec = 700 delta/pod/10sec
+          type: AverageValue
+          averageValue: "700"

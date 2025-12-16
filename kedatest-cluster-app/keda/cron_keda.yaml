@@ -1,0 +1,36 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: load-target-keda-gcp-rps-with-cron
+  namespace: load-test
+spec:
+  scaleTargetRef:
+    name: load-target
+  minReplicaCount: 15
+  maxReplicaCount: 100
+
+  pollingInterval: 15
+  cooldownPeriod: 60
+
+  triggers:
+    - type: gcp-stackdriver
+      metadata:
+        projectId: MY_PROJECT_ID
+        filter: >
+          metric.type="custom.googleapis.com/testapi/request_count"
+          AND resource.type="global"
+          AND metric.label.endpoint="work"
+        targetValue: "70"
+        activationTargetValue: "1"
+        alignmentPeriodSeconds: "60"
+        alignmentAligner: rate
+        alignmentReducer: sum
+        filterDuration: "2"
+
+    - type: cron
+      metadata:
+        timezone: Asia/Tokyo
+        # ひな形：平日9-19時は最低30podに底上げ（後で調整）
+        start: "0 9 * * 1-5"
+        end: "0 19 * * 1-5"
+        desiredReplicas: "30"
